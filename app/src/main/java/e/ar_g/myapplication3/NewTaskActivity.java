@@ -1,5 +1,7 @@
 package e.ar_g.myapplication3;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -11,7 +13,7 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 public class NewTaskActivity extends AppCompatActivity {
-
+  public static String NEW_TASK_KEY = "NEW_TASK_KEY";
   private EditText etTaskName;
   private ImageButton ibNewItem;
 
@@ -27,7 +29,15 @@ public class NewTaskActivity extends AppCompatActivity {
 
     ibNewItem.setOnClickListener(new View.OnClickListener() {
       @Override public void onClick(View v) {
-        Toast.makeText(NewTaskActivity.this, "User clicked", Toast.LENGTH_SHORT).show();
+        Intent data = new Intent();
+
+        String taskName = etTaskName.getText().toString();
+        Task value = new Task(taskName, 0);
+
+        data.putExtra(NEW_TASK_KEY, value);
+
+        NewTaskActivity.this.setResult(Activity.RESULT_OK, data);
+        NewTaskActivity.this.finish();
       }
     });
 
