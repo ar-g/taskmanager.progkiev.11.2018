@@ -1,4 +1,4 @@
-package e.ar_g.myapplication3;
+package e.ar_g.myapplication3.features.tasklist;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
@@ -9,6 +9,9 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.List;
+
+import e.ar_g.myapplication3.R;
+import e.ar_g.myapplication3.db.Task;
 
 public class TaskAdapter extends RecyclerView.Adapter<TaskViewHolder> {
   private final Context context;
@@ -54,5 +57,10 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskViewHolder> {
   public void addTask(Task task){
     tasks.add(task);
     notifyItemInserted(tasks.size() - 1);
+  }
+
+  public void setTasks(List<Task> tasks){
+    this.tasks = tasks;
+    notifyDataSetChanged();
   }
 }
