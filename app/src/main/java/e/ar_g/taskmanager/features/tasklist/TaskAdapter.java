@@ -1,4 +1,4 @@
-package e.ar_g.myapplication3.features.tasklist;
+package e.ar_g.taskmanager.features.tasklist;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
@@ -10,8 +10,8 @@ import android.view.ViewGroup;
 
 import java.util.List;
 
-import e.ar_g.myapplication3.R;
-import e.ar_g.myapplication3.db.Task;
+import e.ar_g.taskmanager.R;
+import e.ar_g.taskmanager.db.Task;
 
 public class TaskAdapter extends RecyclerView.Adapter<TaskViewHolder> {
   private final Context context;

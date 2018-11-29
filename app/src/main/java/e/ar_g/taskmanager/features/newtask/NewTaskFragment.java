@@ -1,13 +1,11 @@
-package e.ar_g.myapplication3.features.newtask;
+package e.ar_g.taskmanager.features.newtask;
 
 import android.arch.persistence.room.Room;
-import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -19,9 +17,9 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import e.ar_g.myapplication3.db.AppDatabase;
-import e.ar_g.myapplication3.R;
-import e.ar_g.myapplication3.db.Task;
+import e.ar_g.taskmanager.db.AppDatabase;
+import e.ar_g.taskmanager.R;
+import e.ar_g.taskmanager.db.Task;
 
 public class NewTaskFragment extends Fragment {
   public static final String TAG ="NewTaskFragment";

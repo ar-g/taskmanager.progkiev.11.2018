@@ -1,4 +1,4 @@
-package e.ar_g.myapplication3;
+package e.ar_g.taskmanager;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

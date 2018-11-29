@@ -1,10 +1,11 @@
-package e.ar_g.myapplication3.features.tasklist;
+package e.ar_g.taskmanager.features.tasklist;
 
 
 import android.arch.persistence.room.Room;
-import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -13,6 +14,7 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,21 +22,27 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-import e.ar_g.myapplication3.R;
-import e.ar_g.myapplication3.db.AppDatabase;
-import e.ar_g.myapplication3.db.Task;
-import e.ar_g.myapplication3.features.newtask.NewTaskActivity;
+import e.ar_g.taskmanager.App;
+import e.ar_g.taskmanager.R;
+import e.ar_g.taskmanager.db.AppDatabase;
+import e.ar_g.taskmanager.db.Task;
 
 public class TasksFragment extends Fragment {
   public static final int NEW_TASK_ACTIVITY = 101;
-
+  public static final String TAG = TasksFragment.class.getSimpleName();
   private RecyclerView rv;
   private FloatingActionButton fabAddTask;
   private SwipeRefreshLayout srTasks;
 
   private final List<Task> tasks = new ArrayList<>();
   private TaskAdapter taskAdapter;
+  private ThreadPoolExecutor executor;
+  private Runnable updateAdapterRunnable;
+  private Handler handler;
 
   public TasksFragment() {
     // Required empty public constructor
@@ -72,7 +80,7 @@ public class TasksFragment extends Fragment {
         }
 */
 
-      insertTasks();
+      insertTasksThroughAsyncTask();
 
       }
     });
@@ -86,6 +94,10 @@ public class TasksFragment extends Fragment {
     rv.setAdapter(taskAdapter);
 
     tasks.add(new Task("Fragments", 0));
+
+    int availableProcessors = Runtime.getRuntime().availableProcessors();
+    executor = new ThreadPoolExecutor(
+      1, availableProcessors, 0, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1000));
   }
 
   @Override public void onResume() {
@@ -112,22 +124,86 @@ public class TasksFragment extends Fragment {
   }
 
 
-  private void insertTasks() {
-    FragmentActivity activity = getActivity();
-    if (activity != null) {
-      final AppDatabase db = Room
-        .databaseBuilder(activity, AppDatabase.class, "database-name")
-        .allowMainThreadQueries()
-        .build();
+  private void insertTasksThroughHandler() {
 
-      taskAdapter.setTasks(db.taskDao().getAll());
+    final FragmentActivity activity = getActivity();
+    if (activity != null){
+      final AppDatabase db = ((App) getActivity().getApplication()).getDb();
 
-      for (int i = 0; i < 20000; i++) {
-        db.taskDao().insert(new Task(i + "", i));
-      }
+      handler = new Handler(Looper.getMainLooper());
+      updateAdapterRunnable = new Runnable() {
+        @Override public void run() {
+          Log.d(TAG, Thread.currentThread().getName());
+          taskAdapter.setTasks(tasks);
+        }
+      };
+
+      executor.submit(new QueryTasksRunnable(handler, db, updateAdapterRunnable));
     }
   }
 
+  public static class QueryTasksRunnable implements Runnable {
+    private final Handler handler;
+    private final AppDatabase db;
+    private final Runnable updateAdapterRunnable;
+
+    public QueryTasksRunnable(Handler handler, AppDatabase db, Runnable updateAdapterRunnable) {
+      this.handler = handler;
+      this.db = db;
+      this.updateAdapterRunnable = updateAdapterRunnable;
+    }
+
+    @Override public void run() {
+      for (int i = 0; i < 5000; i++) {
+        db.taskDao().insert(new Task(i + "", i));
+      }
+      final List<Task> tasks = db.taskDao().getAll();
+      Log.d(TAG, Thread.currentThread().getName());
+
+      handler.post(updateAdapterRunnable);
+    }
+  }
+
+  public void insertTasksThroughAsyncTask(){
+    final FragmentActivity activity = getActivity();
+    if (activity != null) {
+      final AppDatabase db = ((App) getActivity().getApplication()).getDb();
+      InsertTasksAsynTasks insertTasksAsynTasks = new InsertTasksAsynTasks(db, this);
+      insertTasksAsynTasks.execute();
+    }
+  }
+
+  public static class InsertTasksAsynTasks extends AsyncTask<Void, Void, List<Task>> {
+    private final AppDatabase db;
+    private final TasksFragment tasksFragment;
+
+    public InsertTasksAsynTasks(AppDatabase db, TasksFragment tasksFragment) {
+      this.db = db;
+      this.tasksFragment = tasksFragment;
+    }
+
+    @Override protected List<Task> doInBackground(Void... voids) {
+      for (int i = 0; i < 5000; i++) {
+        db.taskDao().insert(new Task(i + "", i));
+      }
+      final List<Task> tasks = db.taskDao().getAll();
+      Log.d(TAG, Thread.currentThread().getName());
+
+      return tasks;
+    }
+
+    @Override protected void onPostExecute(List<Task> tasks) {
+      super.onPostExecute(tasks);
+      tasksFragment.taskAdapter.setTasks(tasks);
+    }
+  }
+
+  @Override public void onDestroyView() {
+    super.onDestroyView();
+    if (handler != null && updateAdapterRunnable != null){
+      handler.removeCallbacks(updateAdapterRunnable);
+    }
+  }
 
   /*
 

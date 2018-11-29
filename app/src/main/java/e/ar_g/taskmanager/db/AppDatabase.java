@@ -1,4 +1,4 @@
-package e.ar_g.myapplication3.db;
+package e.ar_g.taskmanager.db;
 
 import android.arch.persistence.room.Database;
 import android.arch.persistence.room.RoomDatabase;

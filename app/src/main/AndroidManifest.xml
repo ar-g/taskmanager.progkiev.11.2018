@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="e.ar_g.myapplication3"
+<manifest package="e.ar_g.taskmanager"
   xmlns:android="http://schemas.android.com/apk/res/android">
 
   <application
@@ -7,16 +7,18 @@
     android:icon="@mipmap/ic_launcher"
     android:label="Наше приложение"
     android:supportsRtl="true"
-    android:theme="@style/AppTheme">
+    android:theme="@style/AppTheme"
+    android:name="e.ar_g.taskmanager.App"
+    >
 
-    <activity android:name=".features.main.MainActivity">
+    <activity android:name="e.ar_g.taskmanager.features.main.MainActivity">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
 
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
-    <activity android:name=".features.newtask.NewTaskActivity">
+    <activity android:name="e.ar_g.taskmanager.features.newtask.NewTaskActivity">
 
     </activity>
   </application>

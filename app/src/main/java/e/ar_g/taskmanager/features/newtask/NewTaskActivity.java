@@ -1,11 +1,11 @@
-package e.ar_g.myapplication3.features.newtask;
+package e.ar_g.taskmanager.features.newtask;
 
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 
-import e.ar_g.myapplication3.R;
+import e.ar_g.taskmanager.R;
 
 public class NewTaskActivity extends AppCompatActivity implements PriorityDialogListener {
   @Override

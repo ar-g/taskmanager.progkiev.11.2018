@@ -1,12 +1,12 @@
-package e.ar_g.myapplication3.features.tasklist;
+package e.ar_g.taskmanager.features.tasklist;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
 
-import e.ar_g.myapplication3.R;
-import e.ar_g.myapplication3.db.Task;
+import e.ar_g.taskmanager.R;
+import e.ar_g.taskmanager.db.Task;
 
 public class TaskViewHolder extends RecyclerView.ViewHolder {
   private TextView tvMarker;

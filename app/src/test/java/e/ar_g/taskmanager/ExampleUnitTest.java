@@ -1,4 +1,4 @@
-package e.ar_g.myapplication3;
+package e.ar_g.taskmanager;
 
 import org.junit.Test;
 

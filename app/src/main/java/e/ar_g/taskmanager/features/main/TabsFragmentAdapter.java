@@ -1,11 +1,11 @@
-package e.ar_g.myapplication3.features.main;
+package e.ar_g.taskmanager.features.main;
 
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 
-import e.ar_g.myapplication3.features.tasklist.TasksFragment;
+import e.ar_g.taskmanager.features.tasklist.TasksFragment;
 
 public class TabsFragmentAdapter extends FragmentPagerAdapter {
   public TabsFragmentAdapter(FragmentManager fm) {

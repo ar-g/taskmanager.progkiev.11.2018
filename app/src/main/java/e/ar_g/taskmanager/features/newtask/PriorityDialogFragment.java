@@ -1,4 +1,4 @@
-package e.ar_g.myapplication3.features.newtask;
+package e.ar_g.taskmanager.features.newtask;
 
 import android.app.Activity;
 import android.content.Context;
@@ -11,7 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
-import e.ar_g.myapplication3.R;
+import e.ar_g.taskmanager.R;
 
 public class PriorityDialogFragment extends DialogFragment {
   public static final String TAG = "PriorityDialogFragment";
