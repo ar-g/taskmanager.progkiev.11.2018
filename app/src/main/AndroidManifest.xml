@@ -3,23 +3,22 @@
   xmlns:android="http://schemas.android.com/apk/res/android">
 
   <application
+    android:name=".App"
     android:allowBackup="true"
     android:icon="@mipmap/ic_launcher"
     android:label="Наше приложение"
     android:supportsRtl="true"
-    android:theme="@style/AppTheme"
-    android:name="e.ar_g.taskmanager.App"
-    >
+    android:theme="@style/AppTheme">
+    <activity android:name=".features.main.MainActivity">
 
-    <activity android:name="e.ar_g.taskmanager.features.main.MainActivity">
+    </activity>
+    <activity android:name=".features.newtask.NewTaskActivity"></activity>
+    <activity android:name=".features.productivity.TestActivity">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
 
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
-    </activity>
-    <activity android:name="e.ar_g.taskmanager.features.newtask.NewTaskActivity">
-
     </activity>
   </application>
 
