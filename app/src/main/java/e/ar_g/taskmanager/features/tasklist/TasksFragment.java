@@ -1,35 +1,34 @@
 package e.ar_g.taskmanager.features.tasklist;
 
 
-import android.arch.persistence.room.Room;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import e.ar_g.taskmanager.App;
 import e.ar_g.taskmanager.R;
 import e.ar_g.taskmanager.db.AppDatabase;
 import e.ar_g.taskmanager.db.Task;
+import e.ar_g.taskmanager.db.TaskDao;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
 public class TasksFragment extends Fragment {
   public static final int NEW_TASK_ACTIVITY = 101;
@@ -38,11 +37,9 @@ public class TasksFragment extends Fragment {
   private FloatingActionButton fabAddTask;
   private SwipeRefreshLayout srTasks;
 
-  private final List<Task> tasks = new ArrayList<>();
   private TaskAdapter taskAdapter;
-  private ThreadPoolExecutor executor;
-  private Runnable updateAdapterRunnable;
-  private Handler handler;
+
+  private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
   public TasksFragment() {
     // Required empty public constructor
@@ -62,7 +59,6 @@ public class TasksFragment extends Fragment {
     srTasks = view.findViewById(R.id.srTasks);
     srTasks.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
       @Override public void onRefresh() {
-        loadTasksFromDb();
       }
     });
 
@@ -71,17 +67,7 @@ public class TasksFragment extends Fragment {
 
     fabAddTask.setOnClickListener(new View.OnClickListener() {
       @Override public void onClick(View v) {
-/*
-        FragmentActivity activity = getActivity();
-        if (activity != null) {
-          activity.startActivityForResult(
-            new Intent(getActivity(), NewTaskActivity.class),
-            NEW_TASK_ACTIVITY);
-        }
-*/
-
-      insertTasksThroughAsyncTask();
-
+        insert500Tasks();
       }
     });
 
@@ -90,132 +76,54 @@ public class TasksFragment extends Fragment {
       @Override public void onClick(Task task) {
         Toast.makeText(getContext(), task.getName(), Toast.LENGTH_LONG).show();
       }
-    }, tasks);
+    }, Collections.<Task>emptyList());
     rv.setAdapter(taskAdapter);
 
-    tasks.add(new Task("Fragments", 0));
 
-    int availableProcessors = Runtime.getRuntime().availableProcessors();
-    executor = new ThreadPoolExecutor(
-      1, availableProcessors, 0, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1000));
+    loadTasks();
   }
 
-  @Override public void onResume() {
-    super.onResume();
-    loadTasksFromDb();
-  }
-
-  private void loadTasksFromDb() {
-    FragmentActivity activity = getActivity();
-    if (activity != null) {
-      final AppDatabase db = Room
-        .databaseBuilder(activity, AppDatabase.class, "database-name")
-        .allowMainThreadQueries()
-        .build();
-
-      taskAdapter.setTasks(db.taskDao().getAll());
-
-      new Handler().postDelayed(new Runnable() {
-        @Override public void run() {
-          srTasks.setRefreshing(false);
-        }
-      }, 2000);
-    }
-  }
-
-
-  private void insertTasksThroughHandler() {
-
-    final FragmentActivity activity = getActivity();
-    if (activity != null){
-      final AppDatabase db = ((App) getActivity().getApplication()).getDb();
-
-      handler = new Handler(Looper.getMainLooper());
-      updateAdapterRunnable = new Runnable() {
-        @Override public void run() {
-          Log.d(TAG, Thread.currentThread().getName());
-          taskAdapter.setTasks(tasks);
-        }
-      };
-
-      executor.submit(new QueryTasksRunnable(handler, db, updateAdapterRunnable));
-    }
-  }
-
-  public static class QueryTasksRunnable implements Runnable {
-    private final Handler handler;
-    private final AppDatabase db;
-    private final Runnable updateAdapterRunnable;
-
-    public QueryTasksRunnable(Handler handler, AppDatabase db, Runnable updateAdapterRunnable) {
-      this.handler = handler;
-      this.db = db;
-      this.updateAdapterRunnable = updateAdapterRunnable;
-    }
-
-    @Override public void run() {
-      for (int i = 0; i < 5000; i++) {
-        db.taskDao().insert(new Task(i + "", i));
-      }
-      final List<Task> tasks = db.taskDao().getAll();
-      Log.d(TAG, Thread.currentThread().getName());
-
-      handler.post(updateAdapterRunnable);
-    }
-  }
-
-  public void insertTasksThroughAsyncTask(){
+  private void loadTasks(){
     final FragmentActivity activity = getActivity();
     if (activity != null) {
-      final AppDatabase db = ((App) getActivity().getApplication()).getDb();
-      InsertTasksAsynTasks insertTasksAsynTasks = new InsertTasksAsynTasks(db, this);
-      insertTasksAsynTasks.execute();
+
+      final AppDatabase db = App.getApp(activity).getDb();
+      TaskDao taskDao = db.taskDao();
+
+      compositeDisposable.add(
+        taskDao.getAllReactively()
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe(new Consumer<List<Task>>() {
+          @Override public void accept(List<Task> tasks) throws Exception {
+            taskAdapter.setTasks(tasks);
+          }
+        }));
     }
   }
 
-  public static class InsertTasksAsynTasks extends AsyncTask<Void, Void, List<Task>> {
-    private final AppDatabase db;
-    private final TasksFragment tasksFragment;
-
-    public InsertTasksAsynTasks(AppDatabase db, TasksFragment tasksFragment) {
-      this.db = db;
-      this.tasksFragment = tasksFragment;
+  private void insert500Tasks() {
+    List<Task> tasks = new ArrayList<>();
+    for (int i = 0; i < 500; i++) {
+      tasks.add(new Task(i + "", i));
     }
+    final FragmentActivity activity = getActivity();
+    if (activity != null) {
+      final AppDatabase db = App.getApp(activity).getDb();
 
-    @Override protected List<Task> doInBackground(Void... voids) {
-      for (int i = 0; i < 5000; i++) {
-        db.taskDao().insert(new Task(i + "", i));
-      }
-      final List<Task> tasks = db.taskDao().getAll();
-      Log.d(TAG, Thread.currentThread().getName());
+      Task[] arrayOfTasks = tasks.toArray(new Task[500]);
 
-      return tasks;
-    }
-
-    @Override protected void onPostExecute(List<Task> tasks) {
-      super.onPostExecute(tasks);
-      tasksFragment.taskAdapter.setTasks(tasks);
+      compositeDisposable.add(
+        db.taskDao()
+          .insertReactively(arrayOfTasks)
+          .subscribeOn(Schedulers.io())
+          .subscribe()
+      );
     }
   }
 
-  @Override public void onDestroyView() {
-    super.onDestroyView();
-    if (handler != null && updateAdapterRunnable != null){
-      handler.removeCallbacks(updateAdapterRunnable);
-    }
+  @Override public void onStop() {
+    super.onStop();
+    compositeDisposable.clear();
   }
-
-  /*
-
-  @Override protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
-    if (requestCode == NEW_TASK_ACTIVITY && resultCode == Activity.RESULT_OK && data != null){
-      Task task = data.getParcelableExtra(NewTaskActivity.NEW_TASK_KEY);
-
-      taskAdapter.addTask(task);
-    }
-  }
-
-*/
-
 }
